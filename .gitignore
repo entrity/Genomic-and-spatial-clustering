@@ -1,0 +1,7 @@
+data
+tmp
+*.tmp
+tmp.*
+*.pyc
+__pycache__
+
