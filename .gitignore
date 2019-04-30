@@ -4,4 +4,6 @@ tmp
 tmp.*
 *.pyc
 __pycache__
-
+*.png
+*.npy
+*.pkl

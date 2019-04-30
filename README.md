@@ -17,6 +17,7 @@ My project is an unsupervised approach at identifying patterns of cell types in 
 
 I plan to apply spectral clustering directly to the graph data (omitting the aforementioned GCN.
 
+0. Whiten data
 1. Fully-connected graph
 2. Sparse graph
 3. Spectral clustering
