@@ -9,9 +9,10 @@ from util import tictoc
 
 class BaseGraph(object):
 	# @arg A is an adjacency matrix or a path to it
-	def __init__(self, A=None, savedir=None):
+	def __init__(self, A=None, savedir=None, **args):
 		self.A = load(A)
 		self.savedir = savedir
+		self.no_spatial = args.get('no_spatial', False)
 	# Construct fully-connected adjacency matrix
 	def fc_graph(self, xy, transcriptome, savepath=None):
 		self.xy = xy # spatial features
@@ -21,11 +22,12 @@ class BaseGraph(object):
 		n = self.xy.shape[0]
 		distance = np.zeros((n,n)) # opposite of adjacency matrix
 		# Add xy distance to top-right triangle
-		util.debug('setting spatial distance...')
-		for i, xy in enumerate(self.xy):
-			if i % 200 == 0: util.debug(i)
-			for j in range(i+1, n):
-				distance[i,j] += self._xy_dist(self.xy[i,...], self.xy[j,...])
+		if not self.no_spatial:
+			util.debug('setting spatial distance...')
+			for i, xy in enumerate(self.xy):
+				if i % 200 == 0: util.debug(i)
+				for j in range(i+1, n):
+					distance[i,j] += self._xy_dist(self.xy[i,...], self.xy[j,...])
 		# Add feature distance to top-right triangle
 		util.debug('setting transcriptome distance...')
 		for i, gen in enumerate(self.transcriptome):
@@ -95,12 +97,12 @@ def load(obj):
 	else:
 		return np.load(obj)
 
-def run(GraphClass, xy_npy, gen_npy, k_nn, savedir):
+def run(GraphClass, xy_npy, gen_npy, k_nn, savedir, no_spatial=False):
 	xy  = np.load(xy_npy)
 	gen = np.load(gen_npy)
 	npy = None if savedir is None else os.path.join(savedir, 'fc-graph.npy')
 	if npy is not None and not os.path.exists(npy): npy = None
-	g = GraphClass(npy, savedir)
+	g = GraphClass(npy, savedir, no_spatial=no_spatial)
 	if not isinstance(g.A, np.ndarray):
 		g.fc_graph(xy, gen)
 	g.sparsify(k_nn)
@@ -109,6 +111,7 @@ def run(GraphClass, xy_npy, gen_npy, k_nn, savedir):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
+	parser.add_argument('--no-spatial', action='store_true', help='Do not include spatial information in computing distance')
 	parser.add_argument('-k', '--knn', type=int, help='Number of nearest neighbours to preserve in sparse graph')
 	args = parser.parse_args()
-	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.knn, args.savedir)
+	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.knn, args.savedir, args.no_spatial)
