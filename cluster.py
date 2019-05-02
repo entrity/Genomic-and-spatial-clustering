@@ -5,6 +5,7 @@
 # Compute eigenvectors, eigenvalues of Laplacian
 
 import os, argparse
+import pickle
 import numpy as np
 import scipy.linalg
 import sklearn.cluster
@@ -66,14 +67,14 @@ class Clustering(object):
 		tic = util.tictoc('clustering...')
 		kmeans = sklearn.cluster.KMeans(k).fit(embedding)
 		util.tictoc('clustered.', tic)
-		self._save('kmeans-dim-%s-k-%d' % (str(self.dim), k), kmeans)
+		self._save('kmeans-dim-%s-k-%d.pkl' % (str(self.dim), k), kmeans)
 		return kmeans
 	def _save(self, name, obj):
 		if self.savedir is not None:
 			path = os.path.join(self.savedir, name)
 			util.debug('Saving %s...' % path)
 			with open(path, 'wb') as fout:
-				pickle.dump(obj, path)
+				pickle.dump(obj, fout)
 
 # Return eigendecomposition: vals, vecs
 def eigen(laplacian):
@@ -112,9 +113,9 @@ def plot_clusters(xy_npy, kmeans):
 	# import IPython; IPython.embed(); # to do: delete
 
 
-def run(graph, dim, k, do_plot, xy_npy):
+def run(graph, dim, k, do_plot, xy_npy, savedir=None):
 	print(dim, k)
-	clustering = Clustering(graph, dim)
+	clustering = Clustering(graph, dim, savedir)
 	kmeans = clustering.cluster_n(k)
 	if do_plot: plot_clusters(xy_npy, kmeans)
 	# clustering.cluster_rw(k)
@@ -134,4 +135,4 @@ if __name__ == '__main__':
 		title = lambda lap_name: 'Eigenvalues %s (connectivity %d)' % (lap_name, args.knn)
 		plot_eigvals(args.graph, args.km, title, args.savedir)
 	else:
-		run(args.graph, args.dim, args.km, args.scatterplot, args.xy_npy)
+		run(args.graph, args.dim, args.km, args.scatterplot, args.xy_npy, args.savedir)
