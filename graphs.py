@@ -50,6 +50,7 @@ class BaseGraph(object):
 		if savepath is None and self.savedir is not None:
 			savepath = os.path.join(self.savedir, default_savename)
 		util.debug('Saving %s...' % savepath)
+		os.makedirs(self.savedir, exist_ok=True)
 		np.save(savepath, object)
 	def _sparsified(self, k):
 		util.debug('Sparsifying with k-n-n = %d...' % k)
@@ -63,6 +64,9 @@ class BaseGraph(object):
 		for r, row in enumerate(idxs):
 			mask[r, row] = 1
 		self.A *= mask
+		nnzs = len(np.nonzero(self.A)[0])
+		# Make diagonal
+		self.A = (self.A + self.A.T) / 2.
 		nnzs = len(np.nonzero(self.A)[0])
 		util.tictoc('Sparsified matrix A (%d nonzeros).' % nnzs, tic)
 		self._save(savepath, 'sparse-graph.npy', self.A)
