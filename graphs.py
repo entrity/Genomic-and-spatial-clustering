@@ -35,7 +35,7 @@ class BaseGraph(object):
 		# Copy to lower-left triangle
 		distance += distance.T
 		# Create adjacency matrix. (Because I will use k-nearest-neighbours, ranking is all that matters, not relative distance between all points.)
-		self.A = distance * -1
+		self.A = (distance.max() - distance + 1.) / (distance.max() + 1.)
 		# Remove self-loops (diagonal)
 		self.A -= np.diag(np.diag(self.A))
 		# Debug
@@ -55,7 +55,7 @@ class BaseGraph(object):
 		util.debug('Sparsifying with k-n-n = %d...' % k)
 		I = self.A.argsort(axis=1)
 		return I[:,-k:]
-	def sparsify(self, k):
+	def sparsify(self, k, savepath=None):
 		nnzs = len(np.nonzero(self.A)[0])
 		tic = util.tictoc('Sparsifying matrix A (%d nonzeros)...' % nnzs)
 		idxs = self._sparsified(k)
@@ -65,6 +65,7 @@ class BaseGraph(object):
 		self.A *= mask
 		nnzs = len(np.nonzero(self.A)[0])
 		util.tictoc('Sparsified matrix A (%d nonzeros).' % nnzs, tic)
+		self._save(savepath, 'sparse-graph.npy', self.A)
 	def _xy_dist(self, a, b):
 		assert np.ndim(a) == 1
 		assert np.ndim(b) == 1
@@ -93,8 +94,8 @@ def load(obj):
 def run(GraphClass, xy_npy, gen_npy, k_nn, savedir):
 	xy  = np.load(xy_npy)
 	gen = np.load(gen_npy)
-	npy = os.path.join(savedir, 'fc-graph.npy')
-	if not os.path.exists(npy): npy = None
+	npy = None if savedir is None else os.path.join(savedir, 'fc-graph.npy')
+	if npy is not None and not os.path.exists(npy): npy = None
 	g = GraphClass(npy, savedir)
 	if not isinstance(g.A, np.ndarray):
 		g.fc_graph(xy, gen)
@@ -104,6 +105,6 @@ def run(GraphClass, xy_npy, gen_npy, k_nn, savedir):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
-	parser.add_argument('-k', '--k', type=int, help='Number of nearest neighbours to preserve in sparse graph')
+	parser.add_argument('-k', '--knn', type=int, help='Number of nearest neighbours to preserve in sparse graph')
 	args = parser.parse_args()
-	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.k, args.savedir)
+	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.knn, args.savedir)
