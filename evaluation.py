@@ -37,6 +37,7 @@ def build_gt_graphs(n, cids, lbls):
 		if lbl == -1: continue # -1 is labelled 'NA'
 		for idx in idxs:
 			pos_mask[idx, idxs] = 1
+	pos_mask = pos_mask - np.diag(np.diag(pos_mask))
 	# util.debug('Saving %s...' % DEFAULT_POS_MASK_PATH)
 	# np.save(DEFAULT_POS_MASK_PATH, pos_mask)
 	# Build negative mask (1's for pairs which belong to different clusters)
@@ -50,24 +51,42 @@ def build_gt_graphs(n, cids, lbls):
 			idxs_j = lbl2idxs[lbl_j]
 			for idx_i in idxs_i:
 				neg_mask[idx_i, idxs_j] = 1
+	neg_mask = neg_mask - np.diag(np.diag(neg_mask))
 	# util.debug('Saving %s...' % DEFAULT_NEG_MASK_PATH)
 	# np.save(DEFAULT_NEG_MASK_PATH, neg_mask)
 	# Return
 	return pos_mask, neg_mask
 
+# Debugging function used to count nonzero entries in ground-truth graphs
 def comb(pos_mask, neg_mask, r):
 	poss = pos_mask[r].nonzero()[0]
 	negs = neg_mask[r].nonzero()[0]
 	toge = [x for x in poss] + [x for x in negs]
 	return sorted(toge)
 
+# Let `lbls` be `labels_` from a kmeans object
+def graph_from_clusters(lbls):
+	lbl2idxs = {}
+	for i, lbl in enumerate(lbls):
+		if lbl not in lbl2idxs: lbl2idxs[lbl] = []
+		lbl2idxs[lbl].append(i)
+	n = len(lbls)
+	graph = np.zeros((n,n), np.uint8)
+	for lbl in lbl2idxs:
+		if lbl == -1: continue
+		idxs = lbl2idxs[lbl]
+		for idx in idxs:
+			graph[idx, idxs] = 1
+	graph = graph - np.diag(np.diag(graph))
+	return graph
 
-def acc(graph, gt_graph):
-	# Construct mask for pairs which should have edges
-	pos_mask = gt_graph
-	# Construct mask for pairs which should not have edges
-	neg_mask = np.zeros_like(graph, np.uint8)
-	raise NotImplementedError
+# Let all three graphs be binary
+def acc(bin_graph, pos_mask, neg_mask):
+	positives = pos_mask * bin_graph
+	pos_ct = np.count_nonzero(positives)
+	negatives = neg_mask * bin_graph
+	neg_ct = np.count_nonzero(negatives)
+	return pos_ct, neg_ct, pos_ct - neg_ct
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -85,6 +104,9 @@ if __name__ == '__main__':
 		lbls = preprocess.load_class_labels_csv(args.lbl_csv)
 		n    = graph.shape[0]
 		pos_mask, neg_mask = build_gt_graphs(n, cids, lbls)
-	import IPython; IPython.embed(); # to do: delete
 	with open(args.clusters, 'rb') as fin:
 		kmeans = pickle.load(fin)
+	bin_graph = graph_from_clusters(kmeans.labels_)
+	pos_ct, neg_ct, score = acc(bin_graph, pos_mask, neg_mask)
+	print('pos\tneg\tscore\t(SCORING)\n%d\t%d\t%f\t%d\t%d\t%d' % (pos_ct, neg_ct, score, np.count_nonzero(bin_graph), np.count_nonzero(pos_mask), np.count_nonzero(neg_mask)))
+	#import pdb; pdb.set_trace()

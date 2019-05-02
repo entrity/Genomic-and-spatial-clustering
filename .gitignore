@@ -5,6 +5,8 @@ intermediates
 tmp
 *.tmp
 tmp.*
+log
+log.txt
 *.pyc
 __pycache__
 *.png
