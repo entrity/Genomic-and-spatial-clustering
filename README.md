@@ -4,6 +4,15 @@ See preliminary [Project writeup (0.5 pages, including data source)](https://www
 
 My project is an unsupervised approach at identifying patterns of cell types in a 2D layout. It has come to my attention that in the last one or two years, datasets have become available which represent not only the genomic data of sampled cells but also the cells’ location in a 2D surface.
 
+## Usage
+
+```bash
+# Make transcriptomes.npy and xy.npy
+./preprocess.py
+# Create fully-connected graph and get k-nearest-neighbours
+./graphs.py
+```
+
 ## Approach
 
 0. **Whiten transcriptome data**

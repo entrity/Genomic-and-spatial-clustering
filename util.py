@@ -10,6 +10,7 @@ def add_default_args(parser):
 	raw.add_argument('--id_csv', default='data/output_keptCellID.txt', help='path to CSV file containing ID\'s all cells')
 	raw.add_argument('--lbl_csv', default='data/class_labels.csv', help='path to CSV file containing class labels of all cells')
 	intm.add_argument('--fc', help='path to NPY file containing fully-connected graph as adjacency matrix')
+	intm.add_argument('-s', '--savedir', '--save', help='Save directory')
 
 def debug(*msg):
 	print(*msg)

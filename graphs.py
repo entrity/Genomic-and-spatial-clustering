@@ -9,8 +9,9 @@ from util import tictoc
 
 class BaseGraph(object):
 	# @arg A is an adjacency matrix or a path to it
-	def __init__(self, A=None):
+	def __init__(self, A=None, savedir=None):
 		self.A = load(A)
+		self.savedir = savedir
 	# Construct fully-connected adjacency matrix
 	def fc_graph(self, xy, transcriptome, savepath=None):
 		self.xy = xy # spatial features
@@ -40,13 +41,30 @@ class BaseGraph(object):
 		# Debug
 		tictoc('Built fully-connected graph.', tic)
 		# Save
-		if savepath is not None:
-			np.save(savepath, self.A)
+		self._save(savepath, 'fc-graph.npy', self.A)
 		# Return
 		return self.A
-	def sparsified(self, k):
+	def _save(self, savepath, default_savename, object):
+		if savepath is None and self.savedir is None:
+			return
+		if savepath is None and self.savedir is not None:
+			savepath = os.path.join(self.savedir, default_savename)
+		util.debug('Saving %s...' % savepath)
+		np.save(savepath, object)
+	def _sparsified(self, k):
+		util.debug('Sparsifying with k-n-n = %d...' % k)
 		I = self.A.argsort(axis=1)
 		return I[:,-k:]
+	def sparsify(self, k):
+		nnzs = len(np.nonzero(self.A)[0])
+		tic = util.tictoc('Sparsifying matrix A (%d nonzeros)...' % nnzs)
+		idxs = self._sparsified(k)
+		mask = np.zeros_like(self.A)
+		for r, row in enumerate(idxs):
+			mask[r, row] = 1
+		self.A *= mask
+		nnzs = len(np.nonzero(self.A)[0])
+		util.tictoc('Sparsified matrix A (%d nonzeros).' % nnzs, tic)
 	def _xy_dist(self, a, b):
 		assert np.ndim(a) == 1
 		assert np.ndim(b) == 1
@@ -72,22 +90,20 @@ def load(obj):
 	else:
 		return np.load(obj)
 
-def run(GraphClass):
-	parser = argparse.ArgumentParser()
-	util.add_default_args(parser)
-	args = parser.parse_args()
-	xy  = np.load(args.xy_npy)
-	gen = np.load(args.gen_npy)
-	fc_graph_path = 'data/base-graph-fc.npy'
-	k_nn = 5
-	g   = GraphClass()
-	if os.path.exists(fc_graph_path):
-		g.A = load(fc_graph_path)
-	else:
-		g.fc_graph(xy, gen, fc_graph_path)
-	I = g.sparsified(k_nn)
-	return xy, gen, g, I
+def run(GraphClass, xy_npy, gen_npy, k_nn, savedir):
+	xy  = np.load(xy_npy)
+	gen = np.load(gen_npy)
+	npy = os.path.join(savedir, 'fc-graph.npy')
+	if not os.path.exists(npy): npy = None
+	g = GraphClass(npy, savedir)
+	if not isinstance(g.A, np.ndarray):
+		g.fc_graph(xy, gen)
+	g.sparsify(k_nn)
+	return xy, gen, g
 
 if __name__ == '__main__':
-	xy, gen, g, I = run(BaseGraph)
-
+	parser = argparse.ArgumentParser()
+	util.add_default_args(parser)
+	parser.add_argument('-k', '--k', type=int, help='Number of nearest neighbours to preserve in sparse graph')
+	args = parser.parse_args()
+	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.k, args.savedir)
