@@ -1,4 +1,5 @@
 import datetime
+import argparse
 
 def add_default_args(parser):
 	raw = parser.add_argument_group('Raw data')
@@ -11,6 +12,12 @@ def add_default_args(parser):
 	raw.add_argument('--lbl_csv', default='data/class_labels.csv', help='path to CSV file containing class labels of all cells')
 	intm.add_argument('--fc', help='path to NPY file containing fully-connected graph as adjacency matrix')
 	intm.add_argument('-s', '--savedir', '--save', help='Save directory')
+	intm.add_argument('-g', '--graph', help='Adjacency matrix')
+
+def default_args():
+	parser = argparse.ArgumentParser()
+	add_default_args(parser)
+	return parser.parse_args()
 
 def debug(*msg):
 	print(*msg)
