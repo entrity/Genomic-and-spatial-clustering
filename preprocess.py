@@ -16,7 +16,10 @@ def load_cell_ids_csv(fpath):
 	return np.loadtxt(fpath)
 # Load class labels from a CSV file
 def load_class_labels_csv(fpath):
-	return np.loadtxt(fpath)
+	with open(fpath) as fin:
+		data = [line.split(',') for line in fin.read().split('\n')]
+	data = [(int(r[0]), int(r[1]), r[2]) for r in data[1:] if len(r) == 3]
+	return data
 # Load class labels from a CSV file
 def load_transcriptome_csv(fpath):
 	return np.loadtxt(fpath)
