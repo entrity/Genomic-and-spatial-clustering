@@ -1,4 +1,6 @@
 data
+raw
+debug
 intermediates
 tmp
 *.tmp

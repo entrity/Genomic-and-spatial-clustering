@@ -31,8 +31,10 @@ def build_gt_graphs(n, cids, lbls):
 	# Build adjacency matrix (positive connections)
 	pos_mask = np.zeros((n,n), np.uint8)
 	for lbl in lbl2idxs:
-		if lbl == -1: continue # -1 is labelled 'NA'
 		idxs = lbl2idxs[lbl]
+		np.savetxt('debug/cluster-%d-idxs.txt' % lbl, idxs, fmt='%d')
+		np.savetxt('debug/cluster-%d-cids.txt' % lbl, cids[idxs], fmt='%d')
+		if lbl == -1: continue # -1 is labelled 'NA'
 		for idx in idxs:
 			pos_mask[idx, idxs] = 1
 	# util.debug('Saving %s...' % DEFAULT_POS_MASK_PATH)
@@ -79,6 +81,7 @@ if __name__ == '__main__':
 	else:
 		assert graph.shape[0] == graph.shape[1], graph.shape
 		cids = preprocess.load_cell_ids_csv(args.id_csv).astype(np.int)
+		np.savetxt('debug/decimal_keptCellIDs.txt', cids, fmt='%d')
 		lbls = preprocess.load_class_labels_csv(args.lbl_csv)
 		n    = graph.shape[0]
 		pos_mask, neg_mask = build_gt_graphs(n, cids, lbls)

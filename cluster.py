@@ -127,7 +127,6 @@ if __name__ == '__main__':
 	parser.add_argument('--knn', type=int, help='Number of nearest neighbours to preserve in sparse graph')
 	parser.add_argument('--km', type=int, default=12, help='Number of nearest clusters for k-means clustering. The default of 12 was chosen because that\'s how many class labels Gerald indicated.')
 	parser.add_argument('--dim', type=int, help='Number of dimensions (eigenvectors) to use in embedding.')
-	parser.add_argument('-g', '--graph', help='Path to adjacency matrix npy file.')
 	parser.add_argument('--scatterplot', action='store_true', help='Make a 2D scatterplot of the cells.')
 	parser.add_argument('--eigplot', action='store_true', help='Only plot eigenvalues. Don\'t run clustering.')
 	args = parser.parse_args()
