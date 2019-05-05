@@ -5,6 +5,13 @@ import util
 
 # Ref basic operations
 # https://jhui.github.io/2018/02/09/PyTorch-Basic-operations/
+# Ref KLDivLoss
+# https://pytorch.org/docs/stable/_modules/torch/nn/modules/loss.html
+
+def assert_shape(t, shape):
+	assert len(t.shape) == len(shape), (t is not None, t.shape)
+	for i, v in enumerate(shape):
+		assert t.shape[i] == v, t.shape
 
 embeddings = torch.tensor([
 	[1,2,3],
@@ -12,11 +19,7 @@ embeddings = torch.tensor([
 	[9,0,0],
 	[2,3,0.1],
 	]).float()
-embeddings.requires_grad_()
-# centroids = torch.tensor([
-# 	[2,2.5,2],
-# 	[7,0.3,0.15],
-# 	])
+embeddings.requires_grad_(True)
 
 assert isinstance(embeddings, torch.Tensor)
 
@@ -49,12 +52,33 @@ print(' EMBTENSOR', embeddings_tensor.shape)
 print('     DIFFS', q_numerator_differences.shape)
 print('  SQ DISTS', q_numerator_sq_distances.shape)
 print('EMBEDDINGS', embeddings.shape)
-assert q_numerator_sq_distances.shape[0] == I
-assert q_numerator_sq_distances.shape[1] == J
+assert_shape(q_numerator_sq_distances, [I,J])
 q_numerators = torch.add(q_numerator_sq_distances, 1)
-assert q_numerators.dim() == 2, q_numerators.shape
+assert_shape(q_numerators, [I,J])
 
+# Compute q denominator
+q_denominator = torch.sum(q_numerators)
+assert 0 == q_denominator.dim(), q_denominator.shape
 
+# Compute q
+q = torch.div( q_denominator, q_numerators )
+assert_shape(q, [I,J])
+
+# Compute p numerator
+lbls, cluster_freqs = np.unique(kmeans.labels_, return_counts=True)
+cluster_freqs = cluster_freqs[np.argsort(lbls)] # Sort frequencies from cluster 0...k
+cluster_freqs = torch.from_numpy(cluster_freqs).view(1,J).expand(I,J).float()
+assert_shape(cluster_freqs, [I,J])
+p_numerators = torch.div( torch.mul(q,q), cluster_freqs )
+assert_shape(p_numerators, [I,J])
+
+# Computer p denominator
+p_denominator = torch.sum(p_numerators)
+assert 0 == p_denominator.dim(), p_denominator.shape
+
+# Compute p
+p = torch.div( p_numerators, p_denominator )
+assert_shape( p, [I,J] )
 
 # End
 print('DONE A-OK')
