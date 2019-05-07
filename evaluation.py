@@ -88,12 +88,7 @@ def acc(bin_graph, pos_mask, neg_mask):
 	neg_ct = np.count_nonzero(negatives)
 	return pos_ct, neg_ct, pos_ct - neg_ct
 
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	util.add_default_args(parser)
-	parser.add_argument('-c', '--clusters', help='Pickle file of kmeans object', default='intermediates/no-spatial-knn-4/kmeans-dim-None-k-12')
-	args = parser.parse_args()
-	graph = np.load(args.graph)
+def get_ground_truth(graph, args):
 	if os.path.exists(DEFAULT_POS_MASK_PATH) and os.path.exists(DEFAULT_NEG_MASK_PATH):
 		pos_mask = np.load(DEFAULT_GT_GRAPH_PATH)
 		neg_mask = np.load(DEFAULT_NEG_MASK_PATH)
@@ -104,9 +99,19 @@ if __name__ == '__main__':
 		lbls = preprocess.load_class_labels_csv(args.lbl_csv)
 		n    = graph.shape[0]
 		pos_mask, neg_mask = build_gt_graphs(n, cids, lbls)
+	return pos_mask, neg_mask
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	util.add_default_args(parser)
+	parser.add_argument('-c', '--clusters', help='Pickle file of kmeans object', default='intermediates/no-spatial-knn-4/kmeans-dim-None-k-12')
+	args = parser.parse_args()
+	graph = np.load(args.graph)
+	pos_mask, neg_mask = get_ground_truth(graph, args)
 	with open(args.clusters, 'rb') as fin:
 		kmeans = pickle.load(fin)
 	bin_graph = graph_from_clusters(kmeans.labels_)
 	pos_ct, neg_ct, score = acc(bin_graph, pos_mask, neg_mask)
+	kl_div_err = my_loss.compute_kl_div_loss().item()
 	print('pos\tneg\tscore\t(SCORING)\n%d\t%d\t%f\t%d\t%d\t%d' % (pos_ct, neg_ct, score, np.count_nonzero(bin_graph), np.count_nonzero(pos_mask), np.count_nonzero(neg_mask)))
 	#import pdb; pdb.set_trace()

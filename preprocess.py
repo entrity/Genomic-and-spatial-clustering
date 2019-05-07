@@ -24,18 +24,20 @@ def load_class_labels_csv(fpath):
 def load_transcriptome_csv(fpath):
 	return np.loadtxt(fpath)
 # Whiten, sort according to cellID, pickle
-def preprocess_transcriptome(ndarray, savepath):
+def preprocess_transcriptome(ndarray, pca, savepath):
 	ndarray = whiten(ndarray)
-	pca     = PCA(50) # Determined by experiment. Look at eigenvalues.png
-	ndarray = pca.fit_transform(ndarray)
+	if pca:
+		pca  = PCA(5pca) # Determined by experiment. Look at eigenvalues.png
+		ndarray = pca.fit_transform(ndarray)
 	np.save(savepath, ndarray)
 	print('Saved to %s' % savepath)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
+	parser.add_argument('--pca', type=int, default=50, help='Number of dimensions to use for PCA')
 	args = parser.parse_args()
 	xy   = load_xy_csv(args.xy_csv)
 	np.save(args.xy_npy, xy)
 	gens = load_transcriptome_csv(args.gen_csv)
-	preprocess_transcriptome(gens, args.gen_npy)
+	preprocess_transcriptome(gens, args.pca, args.gen_npy)

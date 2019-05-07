@@ -11,8 +11,7 @@ import scipy.linalg
 import sklearn.cluster
 import util
 from util import tictoc
-
-MAX_EIGVAL = 300
+from my_loss import compute_kl_div_loss_from_numpy
 
 class Clustering(object):
 	def __init__(self, graph, dim, savedir=None):
@@ -53,15 +52,18 @@ class Clustering(object):
 		return self.Lrw
 	def cluster_n(self, k):
 		embedding = self._embedding( self.normalized_laplacian(), 'normalized' )
+		self._save('embedding-normalized-%d.pkl' % k, embedding)
 		return self._cluster(embedding, k)
 	def cluster_rw(self, k):
 		embedding = self._embedding( self.random_walk_laplacian(), 'random-walk' )
+		self._save('embedding-random_walk-%d.pkl' % k, embedding)
 		return self._cluster(embedding, k)
 	def _embedding(self, laplacian, name):
-		vals, vecs = eigen(laplacian)
-		if self.dim is not None:
+		vals, vecs = self._eigen(laplacian)
+		if self.dim:
 			I = vals.argsort()
 			vecs = vecs[I, :self.dim]
+		self.embedding = vecs
 		return vecs
 	def _cluster(self, embedding, k):
 		tic = util.tictoc('clustering...')
@@ -69,35 +71,33 @@ class Clustering(object):
 		util.tictoc('clustered.', tic)
 		self._save('kmeans-dim-%s-k-%d.pkl' % (str(self.dim), k), kmeans)
 		return kmeans
+	# Return eigendecomposition: vals, vecs
+	def _eigen(self, laplacian):
+		if self.dim:
+			return scipy.linalg.eigh(laplacian, eigvals=(0, self.dim-1))
+		else:
+			return scipy.linalg.eigh(laplacian)
+	# Make image of eigenvalues
+	def plot_eigvals(self, title):
+		import matplotlib.pyplot as plt
+		def _plot_eigvals(laplacian, title):
+			vals, vecs = self._eigen(laplacian)
+			fig = plt.figure()
+			fig.suptitle(title)
+			x = np.arange(0, len(vals))
+			plt.plot(x, vals)
+			fig.savefig(os.path.join(savedir, title.replace(' ','-')))
+		lN  = self.normalized_laplacian()
+		_plot_eigvals(lN, title('Normalized'))
+		lRw = self.random_walk_laplacian()
+		_plot_eigvals(lN, title('Random-walk'))
+	# Pickle
 	def _save(self, name, obj):
 		if self.savedir is not None:
 			path = os.path.join(self.savedir, name)
 			util.debug('Saving %s...' % path)
 			with open(path, 'wb') as fout:
 				pickle.dump(obj, fout)
-
-# Return eigendecomposition: vals, vecs
-def eigen(laplacian):
-	return scipy.linalg.eigh(laplacian)
-	# return scipy.linalg.eigh(laplacian, eigvals=(0, MAX_EIGVAL))
-
-# Make image of eigenvalues
-def plot_eigvals(graph, k, title, savedir):
-	import matplotlib.pyplot as plt
-	def _plot_eigvals(laplacian, title):
-		vals, vecs = eigen(laplacian)
-		fig = plt.figure()
-		# import IPython; IPython.embed(); # to do: delete
-		fig.suptitle(title)
-		x = np.arange(0, len(vals))
-		plt.plot(x, vals)
-		fig.savefig(os.path.join(savedir, title.replace(' ','-')))
-	clustering = Clustering(graph, None)
-	lN  = clustering.normalized_laplacian()
-	_plot_eigvals(lN, title('Normalized'))
-	lRw = clustering.random_walk_laplacian()
-	_plot_eigvals(lN, title('Random-walk'))
-
 
 def plot_clusters(xy_npy, kmeans):
 	xy = np.load(xy_npy)
@@ -112,14 +112,14 @@ def plot_clusters(xy_npy, kmeans):
 	plt.show()
 	# import IPython; IPython.embed(); # to do: delete
 
-
-def run(graph, dim, k, do_plot, xy_npy, savedir=None):
-	print(dim, k)
-	clustering = Clustering(graph, dim, savedir)
+def run(clustering, k, do_plot, xy_npy, savedir=None):
 	kmeans = clustering.cluster_n(k)
+	loss = compute_kl_div_loss_from_numpy(clustering.embedding, kmeans)
+	print('Normalized Laplacian KL Divergence\t%e' % loss.item())
 	if do_plot: plot_clusters(xy_npy, kmeans)
-	# clustering.cluster_rw(k)
-	# if do_plot: plot_clusters(xy_npy, kmeans)
+	kmeans = clustering.cluster_rw(k)
+	print('Random-walk Laplacian KL Divergence\t%e' % loss.item())
+	if do_plot: plot_clusters(xy_npy, kmeans)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -130,8 +130,9 @@ if __name__ == '__main__':
 	parser.add_argument('--scatterplot', action='store_true', help='Make a 2D scatterplot of the cells.')
 	parser.add_argument('--eigplot', action='store_true', help='Only plot eigenvalues. Don\'t run clustering.')
 	args = parser.parse_args()
+	clustering = Clustering(args.graph, args.dim, args.savedir)
 	if args.eigplot:
 		title = lambda lap_name: 'Eigenvalues %s (connectivity %d)' % (lap_name, args.knn)
-		plot_eigvals(args.graph, args.km, title, args.savedir)
+		clustering.plot_eigvals(title)
 	else:
-		run(args.graph, args.dim, args.km, args.scatterplot, args.xy_npy, args.savedir)
+		run(clustering, args.km, args.scatterplot, args.xy_npy, args.savedir)

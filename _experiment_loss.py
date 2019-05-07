@@ -2,10 +2,12 @@ import torch
 import numpy as np
 from sklearn.cluster import KMeans
 import util
+import torch.nn as nn
 
 # Ref basic operations
 # https://jhui.github.io/2018/02/09/PyTorch-Basic-operations/
 # Ref KLDivLoss
+# https://pytorch.org/docs/stable/nn.html#kldivloss
 # https://pytorch.org/docs/stable/_modules/torch/nn/modules/loss.html
 
 def assert_shape(t, shape):
@@ -79,6 +81,23 @@ assert 0 == p_denominator.dim(), p_denominator.shape
 # Compute p
 p = torch.div( p_numerators, p_denominator )
 assert_shape( p, [I,J] )
+
+# Try loss 1
+# loss_fn = nn.KLDivLoss()
+# loss = loss_fn(q, p)
+# print(loss.item())
+
+# Try loss 2
+log_p = torch.log(p)
+log_q = torch.log(q)
+log_div = torch.add( log_p, -1, log_q )
+terms = torch.mul( p, log_div )
+loss2 = torch.sum(terms)
+print(loss2.item())
+
+
+
+import IPython; IPython.embed(); # to do: delete
 
 # End
 print('DONE A-OK')
