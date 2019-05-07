@@ -9,10 +9,17 @@ from util import tictoc
 
 class BaseGraph(object):
 	# @arg A is an adjacency matrix or a path to it
-	def __init__(self, A=None, savedir=None, **args):
-		self.A = load(A)
+	def __init__(self, A=None, savedir=None, no_spatial=False):
+		if A is None:
+			self.A = None
+		elif isinstance(A, np.ndarray):
+			self.A = A
+		elif isinstance(A, str):
+			self.A = np.load(A) if os.path.exists(A) else None
+		else:
+			raise Exception('Illegal value for A')
 		self.savedir = savedir
-		self.no_spatial = args.get('no_spatial', False)
+		self.no_spatial = no_spatial
 	# Construct fully-connected adjacency matrix
 	def fc_graph(self, xy, transcriptome, savepath=None):
 		self.xy = xy # spatial features
@@ -52,7 +59,8 @@ class BaseGraph(object):
 		if savepath is None and self.savedir is not None:
 			savepath = os.path.join(self.savedir, default_savename)
 		util.debug('Saving %s...' % savepath)
-		os.makedirs(self.savedir, exist_ok=True)
+		if self.savedir is not None:
+			os.makedirs(self.savedir, exist_ok=True)
 		np.save(savepath, object)
 	def _sparsified(self, k):
 		util.debug('Sparsifying with k-n-n = %d...' % k)

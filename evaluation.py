@@ -11,7 +11,7 @@ DEFAULT_POS_MASK_PATH = 'data/gt-pos.npy'
 DEFAULT_NEG_MASK_PATH = 'data/gt-neg.npy'
 
 # Return ground-truth graph with A[i,j] in {0,1} for whether i and j are in same cluster
-def build_gt_graphs(n, cids, lbls):
+def build_gt_graphs(n, cids, lbls, savedir=None):
 	# Remap arbitrary ids in lbls (using cids) to indices 0 through n
 	lbl2idxs = {} # Cluster id to list of cell indices
 	cid2idx  = {} # Cell id to cell index
@@ -32,8 +32,9 @@ def build_gt_graphs(n, cids, lbls):
 	pos_mask = np.zeros((n,n), np.uint8)
 	for lbl in lbl2idxs:
 		idxs = lbl2idxs[lbl]
-		np.savetxt('debug/cluster-%d-idxs.txt' % lbl, idxs, fmt='%d')
-		np.savetxt('debug/cluster-%d-cids.txt' % lbl, cids[idxs], fmt='%d')
+		if savedir is not None:
+			np.savetxt(os.path.join(savedir, 'cluster-%d-idxs.txt' % lbl), idxs, fmt='%d')
+			np.savetxt(os.path.join(savedir, 'cluster-%d-cids.txt' % lbl), cids[idxs], fmt='%d')
 		if lbl == -1: continue # -1 is labelled 'NA'
 		for idx in idxs:
 			pos_mask[idx, idxs] = 1
@@ -64,7 +65,8 @@ def comb(pos_mask, neg_mask, r):
 	toge = [x for x in poss] + [x for x in negs]
 	return sorted(toge)
 
-# Let `lbls` be `labels_` from a kmeans object
+# Let `lbls` be `kmeans.labels_` from a kmeans object
+# Return a binary adjacency matrix which indicates whether given nodes are assigned to the same cluster
 def graph_from_clusters(lbls):
 	lbl2idxs = {}
 	for i, lbl in enumerate(lbls):
@@ -88,17 +90,17 @@ def acc(bin_graph, pos_mask, neg_mask):
 	neg_ct = np.count_nonzero(negatives)
 	return pos_ct, neg_ct, pos_ct - neg_ct
 
-def get_ground_truth(graph, args):
+def get_ground_truth(graph, id_csv, lbl_csv, savedir=None):
 	if os.path.exists(DEFAULT_POS_MASK_PATH) and os.path.exists(DEFAULT_NEG_MASK_PATH):
 		pos_mask = np.load(DEFAULT_GT_GRAPH_PATH)
 		neg_mask = np.load(DEFAULT_NEG_MASK_PATH)
 	else:
 		assert graph.shape[0] == graph.shape[1], graph.shape
-		cids = preprocess.load_cell_ids_csv(args.id_csv).astype(np.int)
+		cids = preprocess.load_cell_ids_csv(id_csv).astype(np.int)
 		np.savetxt('debug/decimal_keptCellIDs.txt', cids, fmt='%d')
-		lbls = preprocess.load_class_labels_csv(args.lbl_csv)
+		lbls = preprocess.load_class_labels_csv(lbl_csv)
 		n    = graph.shape[0]
-		pos_mask, neg_mask = build_gt_graphs(n, cids, lbls)
+		pos_mask, neg_mask = build_gt_graphs(n, cids, lbls, savedir)
 	return pos_mask, neg_mask
 
 if __name__ == '__main__':

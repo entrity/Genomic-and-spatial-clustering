@@ -60,7 +60,7 @@ def compute_kl_div_loss(embeddings, kmeans):
 	# Compute p numerator
 	lbls, cluster_freqs = np.unique(kmeans.labels_, return_counts=True)
 	cluster_freqs = cluster_freqs[np.argsort(lbls)] # Sort frequencies from cluster 0...k
-	cluster_freqs = torch.from_numpy(cluster_freqs).view(1,J).expand(I,J).float()
+	cluster_freqs = torch.from_numpy(cluster_freqs).view(1,J).expand(I,J).double()
 	assert_shape(cluster_freqs, [I,J])
 	p_numerators = torch.div( torch.mul(q,q), cluster_freqs )
 	assert_shape(p_numerators, [I,J])

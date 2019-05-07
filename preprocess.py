@@ -27,7 +27,7 @@ def load_transcriptome_csv(fpath):
 def preprocess_transcriptome(ndarray, pca, savepath):
 	ndarray = whiten(ndarray)
 	if pca:
-		pca  = PCA(5pca) # Determined by experiment. Look at eigenvalues.png
+		pca = PCA(pca) # Determined by experiment. Look at eigenvalues.png
 		ndarray = pca.fit_transform(ndarray)
 	np.save(savepath, ndarray)
 	print('Saved to %s' % savepath)

@@ -62,7 +62,7 @@ class Clustering(object):
 		vals, vecs = self._eigen(laplacian)
 		if self.dim:
 			I = vals.argsort()
-			vecs = vecs[I, :self.dim]
+			vecs = vecs[:, I]
 		self.embedding = vecs
 		return vecs
 	def _cluster(self, embedding, k):
@@ -98,6 +98,20 @@ class Clustering(object):
 			util.debug('Saving %s...' % path)
 			with open(path, 'wb') as fout:
 				pickle.dump(obj, fout)
+
+class NormalizedClustering(Clustering):
+	def __init__(self, *args):
+		super().__init__(*args)
+		self.name = 'Normalized'
+	def cluster(self, k):
+		return super().cluster_n(k)
+
+class RandomWalkClustering(Clustering):
+	def __init__(self, *args):
+		super().__init__(*args)
+		self.name = 'Random walk'
+	def cluster(self, k):
+		return super().cluster_rw(k)
 
 def plot_clusters(xy_npy, kmeans):
 	xy = np.load(xy_npy)
