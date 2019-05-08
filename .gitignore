@@ -5,6 +5,9 @@ intermediates
 tmp
 *.tmp
 tmp.*
+metaprogramming/batch*.sh
+metaprogramming/*.txt
+logs
 log
 log.txt
 *.pyc
