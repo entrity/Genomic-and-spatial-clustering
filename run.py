@@ -62,7 +62,7 @@ def _evaluation(sparse_graph, kmobj, embeddings):
 	# Compute error based on KL Divergence
 	kl_div_err = my_loss.compute_kl_div_loss_from_numpy(embeddings, kmobj).item()
 	# Print
-	print('>>>\tKL D\tpos\tneg\tscore\t(SCORING)')
+	print('>>>\tKL D\tpos\tneg\tscore\tbinNz\tposNz\tnegNz')
 	print('>>>\t%f\t%d\t%d\t%f\t%d\t%d\t%d' % (kl_div_err, pos_ct, neg_ct, score, np.count_nonzero(bin_graph), np.count_nonzero(pos_mask), np.count_nonzero(neg_mask)))
 
 

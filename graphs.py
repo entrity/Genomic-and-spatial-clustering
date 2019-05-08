@@ -89,8 +89,6 @@ class BaseGraph(object):
 	def _transcriptome_dist(self, a, b):
 		assert np.ndim(a) == 1
 		assert np.ndim(b) == 1
-		assert len(a) == 50, len(a) # PCA
-		assert len(b) == 50, len(b) # PCA
 		return euclidean_distance(a, b)
 
 
