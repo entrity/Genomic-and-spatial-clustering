@@ -32,9 +32,6 @@ def build_gt_graphs(n, cids, lbls, savedir=None):
 	pos_mask = np.zeros((n,n), np.uint8)
 	for lbl in lbl2idxs:
 		idxs = lbl2idxs[lbl]
-		if savedir is not None:
-			np.savetxt(os.path.join(savedir, 'cluster-%d-idxs.txt' % lbl), idxs, fmt='%d')
-			np.savetxt(os.path.join(savedir, 'cluster-%d-cids.txt' % lbl), cids[idxs], fmt='%d')
 		if lbl == -1: continue # -1 is labelled 'NA'
 		for idx in idxs:
 			pos_mask[idx, idxs] = 1

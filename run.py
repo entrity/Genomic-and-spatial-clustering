@@ -51,6 +51,10 @@ def _cluster():
 			pickle.dump(kmobj, fout)
 		np.save(args.embedding, clustering.embedding)
 		embedding = clustering.embedding
+	if args.cluster_membership_dir is not None:
+		for lbl in range(args.km):
+			idxs = np.where(kmobj.labels_ == lbl)[0]
+			np.savetxt(os.path.join(args.cluster_membership_dir, 'cluster-%d-idxs.txt' % lbl), idxs, fmt='%d')
 	return kmobj, embedding
 
 # args : id_csv, lbl_csv

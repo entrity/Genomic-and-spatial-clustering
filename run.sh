@@ -5,6 +5,7 @@ KNN=$2
 DIM=$3
 KM=$4
 LAP=$5
+SPATIAL=$6
 
 N_ARGS=5
 if [[ $# -lt $N_ARGS ]]; then
@@ -12,7 +13,7 @@ if [[ $# -lt $N_ARGS ]]; then
 	exit 8
 fi
 
-CLUSTER_DIR="debug/pca_$PCA-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP"
+CLUSTER_DIR="debug/pca_$PCA${SPATIAL}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP"
 
 mkdir -p $CLUSTER_DIR
 mkdir -p artefacts
@@ -30,10 +31,11 @@ python run.py \
 	--knn $KNN \
 	--dim $DIM \
 	--lapmode $LAP \
-	--fc artefacts/fc-pca_$PCA-knn_$KNN.npy \
-	--sparse artefacts/sparse-pca_$PCA-knn_$KNN.npy \
-	--kmobj artefacts/kmeans-pca_$PCA-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.pkl \
-	--embedding artefacts/embedding-pca_$PCA-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.npy \
+	--fc artefacts/fc-pca_$PCA${SPATIAL}-knn_$KNN.npy \
+	--sparse artefacts/sparse-pca_$PCA${SPATIAL}-knn_$KNN.npy \
+	--kmobj artefacts/kmeans-pca_$PCA${SPATIAL}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.pkl \
+	--embedding artefacts/embedding-pca_$PCA${SPATIAL}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.npy \
 	--cluster-membership-dir "$CLUSTER_DIR" \
-	> logs/pca_$PCA-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.log
+	$SPATIAL \
+	> logs/pca_$PCA${SPATIAL}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.log
 
