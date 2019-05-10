@@ -43,14 +43,17 @@ def p3d(x, y, z):
 		plt.draw()
 		plt.pause(.001)
 
-def p2d(x, y, no_show=False):
+def p2d(x, y, no_show=False, **kwargs):
 	if isinstance(x, int) and isinstance(y, int):
 		x = res[:,x]
 		y = res[:,y]
 	fig = plt.figure()
 	plt.scatter(x, y)
+	if kwargs.get('title'): plt.title(kwargs['title'])
 	if not no_show:
 		plt.show()
+	if kwargs.get('title') and not kwargs.get('nosave'):
+		fig.savefig(kwargs['title'])
 
 def cmp_scrs(row_a, row_b, col_a, col_b, xlbl, ylbl, legend, subplot=111):
 	fig = plt.figure()
@@ -91,6 +94,8 @@ def topnbottom(arr, sort_col):
 # topnbottom(res, COL_SCR)
 
 def latex_topnbottom():
+	sel = res[:,COL_KM] == 12
+	arr = res[sel,:]
 	cols = [5, 8, 0, 1, 2, 3, 4, 12]
 	getters = {
 		COL_SPA: lambda v : '' if v else '+',
@@ -107,8 +112,8 @@ def latex_topnbottom():
 			print(' & '.join([str(g(c)) for c in cols]) + r'\\')
 	def disp_topnbottom(sort_col):
 		print(' & '.join([ labels[i] for i in cols ]) + r' \\\hline')
-		order = np.argsort(res[:,sort_col])
-		inorder = res[order,:]
+		order = np.argsort(arr[:,sort_col])
+		inorder = arr[order,:]
 		disp_rows(inorder[:5,:])
 		print(' & '.join(['...' for i in cols]) + r'\\')
 		disp_rows(inorder[-5:,:])
@@ -137,6 +142,25 @@ def plot_kldiv_vs_acc():
 
 
 # p2d(res[:,COL_SCR], res[:,COL_KLD])
+sel = res
+
+if True:
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	plt.scatter(sel[R_RWLK,COL_KNN], sel[R_RWLK,COL_SCR], c='b')
+	plt.scatter(sel[R_NORM,COL_KNN], sel[R_NORM,COL_SCR], c='m')
+	plt.title('Random-walk vs Normalized Laplacian')
+	plt.xlabel('KNN Order')
+	plt.ylabel('ACC')
+	fig.savefig('Random-walk vs Normalized Laplacian')
+
+
+p2d(sel[:,COL_LAP], sel[:,COL_SCR], True, title='Random-walk vs Normalized Laplacian')
+sel = sel[R_RWLK,:]
+p2d(sel[:,COL_PCA], sel[:,COL_SCR], True, title='PCA vs ACC')
+sel = sel[ sel[:,COL_PCA] == 0 ]
+p2d(sel[:,COL_KNN], sel[:,COL_SCR], True, title='KNN vs ACC')
+p2d(sel[:,COL_DIM], sel[:,COL_SCR], True, title='DIM vs ACC')
 
 # print(sel.shape)
 # sel = sel[sel[:,COL_LAP] == 0.]
