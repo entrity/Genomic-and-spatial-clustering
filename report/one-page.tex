@@ -1,0 +1,174 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\graphicspath{ {img/} }
+
+\title{1-page report due on the performance of a baseline/strawman \\
+\large BST 227 - Machine Learning for Genomics}
+\author{Markham Anderson}
+\date{April 2019}
+
+\newcommand{\nData}{1167}
+
+\begin{document}
+
+\maketitle
+\small
+
+\section{Introduction}
+
+In this study, I evaluate the efficacy of spectral clustering on genomic and spatial data for a mesh of cells. If the cells in my limited dataset can be effectively clustered in a manner that coincides with their cell types, it serves as evidence that unsupervised learning may be used for cell-type identification even in low-resource domains. There may, further, be reason to suppose that clustering can be performed at a higher level to discover the characteristics of entire neighbourhoods of cells.
+
+% What is spectral clustering? Why is a Laplacian used? (to keep clusters similar sizes while attending to importance of each each cell and its connections)
+% Spectral clustering entails projecting the data onto a basis composed of eigenvectors of the preprocessed data.
+
+\subsection{Narrowed scope}
+
+This higher-level clustering was initially the focus of the following study, but it has fallen out of scope. A motivating factor for this shift in scope is the size of the clusters discovered. During the baseline experiments, $k$-means clustering was performed with both $k=12$ and $k=24$. (These values for $k$ were chosen because there were 12 known cell types in the dataset.) Among 256 baseline experiments (with varying hyperparameters) where $k = 12$, the median cluster size was 41, and where $k = 24$, the median dropped to 27. Across these experiments, the preponderance of the clusters contained fewer than 10 examples, and the imbalance became even more stark with the increase in $k$. With limited time and few examples per cluster at the cellular level, it was ill-advised to proceed with clustering at the neighbourhood level.
+
+% see images
+
+\section{Dataset}
+
+I worked with 2-dimensional spatial coordinates and 160-dimensional genomic features for each of \nData{} cells in a limited tissue sample. I whitened the transcriptome data in order to decorelate features and remove baises for varying distributions.
+
+% Baseline work led me to decide on PCA
+
+\section{Approach}
+
+I give the approach for the final experiments here as if they had already been performed. The following section refers to this approach and indicates aspects wherein the baseline experiments deviate from it.
+
+I constructed a fully-connected graph of cells, with the edge weight between cell $i$ and cell $j$ calculated as $d(i,j)\times c(i,j)$, where $d$ represents the spatial distance and $c$ represents the genomic feature distance between cells $i$ and $j$. Distances are computed as Euclidean distance.
+
+To sparsify the graph, I ran $k$-nearest-neighbours and kept only the edges between the indicated neighbours. I then trained a graph convolution network (GCN) as an autoencoder on the graph data in order to produce an embedding on which to perform spectral clustering. My GCN's aggregator function was a concatenation of genomic features for a given cell and its $k$ nearest neighbours, in order of proximity to the given cell.
+
+In this new feature space, I will perform spectral clustering. I intend to use the normalized Laplacian to this end, but given time, I may also experiment with a random-walk Lalacian. Moreover, I may experiment with clustering on the feature space in addition to clustering on the eigenvectors of the Laplacians. (GCN's and spectral clustering are both new to me, so I anticipate the possibility that I will not move quickly enough to compare results with alternative designs.)
+
+Using the embedding, I performed spectral clustering, experimenting with both the Normalized Laplacian and the Random-walk Laplacian.
+
+\section{Baseline}
+
+For comparison, I examine the accuracy of the spectral clustering approach without the use of an embedding learned by a GCN. This is the fundamental difference between the approach described in the foregoing section and that used in the experiments reported in this section; however, an additional distinction is that I performed a wide hyperparameter search using this approach because it was computationally less expensive than on the model with the GCN.
+
+\subsection{Hyperparameter selection}
+
+I used my baseline approach approach to select hyperparameters for the more costly approach which included training a GCN. My reasoning for applying hyperparameters selected from this approach to the model described by my final approach is that the GCN's efficacy relies on the similarity of related cells being discernible even before the neural network.
+
+My work in hyperparameter selection bears the defect of peeking into the held-out data: rather than cross-validating to select hyperparameters, I performed this investigation in haste, using all of the \nData{} samples available.
+
+I experimented with the use of and omission of spatial features.
+
+I experimented with the use and omission of PCA on the preprocessed genomic features with a dimensionality of 50, chosen after evaluating the step size of the eigenvectors.
+
+For the number of neighbours $k_{nn}$ used to sparsify the graph, I experimented with values of 4, 8, 16, and 32.
+
+For the number of clusters $k_{clusters}$, I experimented with 12 and 24. I did not go below 12 because 12 is the number of unique cell types contained in my dataset. I did not go above 24 because of the proliferation of very small clusters.
+
+I experimented with both the Normalized Laplacian and the Random-walk Laplacian.
+
+For the number of dimensions $dim$ used in spectral clustering (i.e. the number of eigenvectors of the Laplacian), I experimented with values of 4, 8, 32, 64, 128, 512, and \nData{}. Inspection of distances between eigenvalues for several values of $k_{nn}$ revealed no sharp uptick until the very last, however.
+
+The hyperparameter search whose results are given in the Baseline Results section below, indicates that there is negligible correspondence between $ACC$ and $k_{clusters}$, the use of PCA, random-walk Lapcacians vs normalized Laplacians, and the inclusion/exclusion of spatial coordinates from the initial graph. There appears to be an effect from $dim$ and a marginal effect from $k_{nn}$, however, as shown in Figures \ref{fig:acc_v_dim} and \ref{fig:acc_v_knn}.
+
+Based on my findings, I elected to proceed with $k_{clusters} = 12$, $k_{nn} = 32$, and a Random-walk Laplacian.
+
+\subsection{Metrics}
+
+Ground-truth class labels were available for 656 of the \nData{} cells, so I computed a measure of accuracy $ACC$ based on these annotations. I constructed two binary matrices $POS$ and $NEG$ to indicate where intra-cluster relationships should exist and should not exist. If two cells $i$ and $j$ were both found among the 656 labelled instances and both had the same class label, then $POS_{i,j}$ was set to 1. If $i$ and $j$ were both found among the 656 labelled instances but had different class labels, then $NEG_{i,j}$ was set to 1. I then constructed a binary matrix $C$ to represent the results of my spectral clustering: $C_{i,j} = 1$ for all $i$ and $j$ which my experiment assigned to the same cluster. $ACC$ is credited for each intra-cluster relationship in $C$ which matches a relationship in $POS$ and demerited for each intra-cluster relationship in $C$ which matches a relationship in $NEG$: $ACC = \sum_{i,j} (POS_{i,j}\times C_{i,j}) - (NEG_{i,j}\times C_{i,j})$. A tight, negative correlation between $POS$ and $NEG$ lends credence to the usefulness of $ACC$ as an accuracy metric. 
+
+I also evaluated the clusters produced by my experiments with a KL divergence measure, where $q$ and $p$ are defined as described in \cite{xie2016unsupervised}:
+
+$$
+q_{ij} = \frac
+{(1 + ||z_i - \mu_j||^2)^{-1}}
+{\sum_{j'}(1 + ||z_i - \mu_{j'}||^2)^{-1}}
+$$
+
+$$
+p_{ij} = \frac
+{q^2_{ij}/f_j}
+{\sum_{j'} q^2_{ij'}/f_j}
+$$
+
+$q_{ij}$ is the probability of assigning sample $i$ to cluster $j$. $z_i$ is the embedding of data instance $x_i$. $\mu_j$ is the centroid of cluster $j$. So \cite{xie2016unsupervised}'s choice of $q$ is a straightforward measure of deviations from the computed centroids. $p$ is not really the true distribution because for the purposes of unsupervised learning the true distribution is not known; instead $p$ is computed to ...
+
+My purpose in computing the KL divergence was, like that of \cite{xie2016unsupervised}, was to have a differentiable loss function which could be used to fine tune my neural network (for the final approach) after training SAE's. 
+
+\subsection{Results}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[height=200pt]{kldiv-vs-acc.png}
+    \caption{Comparison of ACC scores and KL divergence scores. Blue data points come from experiments with 12 clusters; green points from experiments with 24 clusters.}
+    \label{kld_vs_acc}
+\end{figure}
+
+Fig \ref{kld_vs_acc} indicates that $ACC$ scores do not correlate well with my KL divergence scores and that most of the difference between them can be explained with the number of clusters produced by $k$-means.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{|l|l|c|c|l|l|c|c}
+    \multicolumn{8}{c}{Worst to Best by ACC} \\\hline
+    KLD & ACC & PCA & DIM & KM & KNN & LAP & SPA \\\hline
+    -18.912758 & -300094 & + & - & 12 & 32 & N & \\
+    -18.82893 & -291166 &  & 4 & 12 & 4 & N & \\
+    -18.844274 & -290406 &  & 4 & 12 & 4 & N & +\\
+    -18.784159 & -284168 & + & 8 & 12 & 4 & N & \\
+    -18.770164 & -283814 & + & 8 & 12 & 4 & N & +\\
+    ... & ... & ... & ... & ... & ... & ... & ...\\
+    -19.050291 & -26764 &  & 4 & 12 & 16 & RW & \\
+    -19.058589 & -26742 & + & 4 & 12 & 32 & RW & \\
+    -19.061134 & -26702 &  & 4 & 12 & 32 & RW & \\
+    -19.058574 & -26702 &  & 4 & 12 & 32 & RW & +\\
+    -19.051351 & -26684 & + & 4 & 12 & 16 & RW & \\
+    \multicolumn{8}{c}{Worst to Best by KLD} \\\hline
+    KLD & ACC & PCA & DIM & KM & KNN & LAP & SPA \\\hline
+    -19.077044 & -30624 &  & 8 & 12 & 32 & RW & +\\
+    -19.076726 & -34202 &  & 8 & 12 & 32 & RW & \\
+    -19.075979 & -34406 & + & 8 & 12 & 32 & RW & +\\
+    -19.075979 & -34406 & + & 8 & 12 & 32 & RW & \\
+    -19.071761 & -30042 & + & 8 & 12 & 16 & RW & \\
+    ... & ... & ... & ... & ... & ... & ... & ...\\
+    -17.89238 & -56768 & + & - & 12 & 32 & N & +\\
+    -17.846067 & -53416 & + & - & 12 & 16 & N & \\
+    -17.78872 & -43330 &  & - & 12 & 16 & RW & +\\
+    -17.771091 & -55568 &  & - & 12 & 4 & RW & \\
+    -17.759338 & -66086 &  & - & 12 & 32 & N & \\
+    \end{tabular}
+    \caption{Top 5 and bottom 5 results, based on ACC scores and KL divergence scores. \label{tab:ress}}
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[height=200pt]{DIM-vs-ACC.png}
+    \caption{The correlation of $dim$ (i.e. the number of dimensions to use in the embedding) with $ACC$}
+    \label{fig:acc_v_dim}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[height=200pt]{KNN-vs-ACC.png}
+    \caption{The correlation of $k_{nn}$ (i.e. the number of nearest neighbours to include in the sparse graph) with $ACC$}
+    \label{fig:acc_v_knn}
+\end{figure}
+
+
+Therefore, in Table \ref{tab:ress}, I restrict my reporting to only a single value of $k$ (under the column $KM$).
+
+
+\subsection{Conclusions}
+
+Unfortunately, the KL divergence values do not correlate well with $ACC$, though the KL divergence metric is crafted to select for generally desirable cluster attributes.
+
+The most significant contributor to decrease in KL divergence was increasing $k_{clusters}$ from 12 to 24.
+
+% \section{Discussion}
+
+% Lack of testing for non-euclidean distance metrics
+
+% Shortcomings of my choice of GCN aggregator function (This has shortcomings, but GCN's are new to me, so I intend this to be at least my first approach. If all proceeds quickly, I may experiment with other aggregator functions.) The embedding produced by the GCN's encoder will then serve as a new feature representation (replacing the former spatial and feature data) for each cell (or, rather, each neighbourhood, with a neighbourhood being focused on a single cell).
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}
