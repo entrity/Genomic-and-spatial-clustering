@@ -10,6 +10,8 @@ def add_default_args(parser):
 	intm.add_argument('--gen-npy', '--gen_npy', default='data/transcriptomes.npy', help='path to NPY file containing whitened transcriptome data for all cells')
 	raw.add_argument('--id-csv', '--id_csv', default='data/output_keptCellID.txt', help='path to CSV file containing ID\'s all cells')
 	raw.add_argument('--lbl-csv', '--lbl_csv', default='data/class_labels.csv', help='path to CSV file containing class labels of all cells')
+	intm.add_argument('--knn-feats', '--knn_feats')
+	intm.add_argument('--knn-idxs', '--knn_idxs')
 	intm.add_argument('-s', '--savedir', '--save', help='Save directory')
 	intm.add_argument('--fc', help='fully-connected graph as adjacency matrix (npy file)')
 	intm.add_argument('-g', '--sparse', help='sparse adjacency matrix (npy file)')

@@ -33,6 +33,8 @@ python run.py \
 	--kmobj artefacts/kmeans-pca_$PCA${SPA}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.pkl \
 	--embedding artefacts/embedding-pca_$PCA${SPA}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.npy \
 	--cluster-membership-dir "$CLUSTER_DIR" \
+	--knn-feats "artefacts/knn-feats-pca_$PCA${SPATIAL}-knn_$KNN.npy" \
+	--knn-idxs "artefacts/knn-idxs-pca_$PCA${SPATIAL}-knn_$KNN.txt" \
 	$SPATIAL_ARG \
 	#> logs/pca_$PCA${SPA}-knn_$KNN-dim_$DIM-km_$KM-lap_$LAP.log
 

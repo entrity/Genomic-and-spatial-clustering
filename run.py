@@ -30,6 +30,18 @@ def _graphs(xy, gens):
 			g.fc_graph(xy, gens, args.fc)
 		g.sparsify(args.knn, args.sparse)
 		sparse_graph = g.A
+	# Save KNN
+	if not os.path.exists(args.knn_feats) or not os.path.exists(args.knn_idxs):
+		fc   = np.load(args.fc)
+		N, M = gens.shape
+		# Get indices of nearest neighbours
+		idxs = np.argsort(fc, axis=1)[:,-args.knn:]
+		idxs = np.hstack(( np.arange(N).reshape(-1,1), idxs ))
+		np.savetxt(args.knn_idxs, idxs, fmt='%d')
+		# Get features of neighbourhoods
+		neighbourhood_features = gens[idxs,:].reshape(N, M*(1+args.knn))
+		np.save(args.knn_feats, neighbourhood_features)
+	# Return
 	util.debug('RUN\tnonzeros in graph\t%d' % np.count_nonzero(sparse_graph))
 	return sparse_graph
 
