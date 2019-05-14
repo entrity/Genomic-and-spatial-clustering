@@ -2,6 +2,8 @@
 
 echo $(( 50 * ( 32 + 1 ) ))
 
+mkdir -p training
+
 for STAGE in 1 2 3; do
 	PREV_STAGE=$(( ${STAGE} - 1 ))
 	python trainer.py \
@@ -10,6 +12,6 @@ for STAGE in 1 2 3; do
 		--log_path training/stage-${STAGE}.log \
 		--load_path training/stage-${PREV_STAGE}.pth \
 		--save_path training/state-${STAGE}.pth \
-		--arch 850 250 50 \
+		--arch '850 250 50' \
 		-n ${STAGE}
 done

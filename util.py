@@ -50,4 +50,4 @@ def tictoc(msg='', tic=None):
 		return now
 
 def info(*args):
-	logging.getLogger.info(args)
+	logging.getLogger().info(args)

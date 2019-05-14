@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import sys, os, argparse, logging, datetime
 import util
 from util import info
+import network, dataset
 from collections import deque
 
 class Trainer(object):
@@ -107,16 +108,16 @@ if __name__ == '__main__':
 	parser.add_argument('-a', '--arch')
 	parser.add_argument('--print_every', type=int, default=100)
 	parser.add_argument('--test_every', type=int, default=100)
-	parser.add_argument('--print_every', type=int, default=100)
 	parser.add_argument('--train_bs', type=int, default=64)
 	parser.add_argument('--test_bs', type=int, default=64)
 	parser.add_argument('-n', '--n_saes', type=int)
 	parser.add_argument('--ep', type=int, help='Max epochs to train')
+	parser.add_argument('--lr', type=float)
 	args = parser.parse_args()
 	assert args.save_path is not None
 
 	util.init_logger(args.log_path)
-	logger.info(args)
+	info(args)
 
 	# Make train dataloader
 	if args.train is not None:
@@ -128,13 +129,13 @@ if __name__ == '__main__':
 		testloader = DataLoader( testset, batch_size=args.test_bs )
 	# Build model
 	master_net = network.Net(arch=[int(x) for x in args.arch.split()])
-	if os.path.exists(args.model_path):
-		dump = torch.load(args.model_path)
+	if os.path.exists(args.load_path):
+		dump = torch.load(args.load_path)
 		master_net.load_state_dict( dump['state_dict'] )
-	net = master_net.subnet(n_saes)
+	net = master_net.subnet(args.n_saes)
 	# Build optimizer
 	optim   = torch.optim.SGD( net, lr=args.lr )
-	if os.path.exists(args.model_path):
+	if os.path.exists(args.load_path):
 		optim.load_state_dict( dump['optim_state_dict'] )
 	# Build trainer
 	trainer = Trainer(trainloader, testloader, net,
