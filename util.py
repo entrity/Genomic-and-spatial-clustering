@@ -1,5 +1,11 @@
 import datetime
 import argparse
+import logging
+
+def init_logger(path):
+	logging.basicConfig(filename=path, format='%(message)s')
+	logging.getLogger().addHandler(logging.StreamHandler())
+	logging.getLogger().setLevel(logging.INFO)
 
 def add_default_args(parser):
 	raw = parser.add_argument_group('Raw data')
@@ -42,3 +48,6 @@ def tictoc(msg='', tic=None):
 	else:
 		debug(msg)
 		return now
+
+def info(*args):
+	logging.getLogger.info(args)
