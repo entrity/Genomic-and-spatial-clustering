@@ -127,7 +127,7 @@ if __name__ == '__main__':
 		testset = dataset.XDataset( args.test )
 		testloader = DataLoader( testset, batch_size=args.test_bs )
 	# Build model
-	master_net = network.Net(arch=args.arch)
+	master_net = network.Net(arch=[int(x) for x in args.arch.split()])
 	if os.path.exists(args.model_path):
 		dump = torch.load(args.model_path)
 		master_net.load_state_dict( dump['state_dict'] )
