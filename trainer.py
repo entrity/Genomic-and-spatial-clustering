@@ -1,4 +1,5 @@
 import torch, torch.nn as nn, numpy as np
+from torch.utils.data import DataLoader
 import sys, os, argparse, logging, datetime
 import util
 from util import info
@@ -93,7 +94,7 @@ def save_model():
 		'iter_i': trainer.iter_i,
 		'epoch_i': trainer.epoch_i,
 		'batch_i': trainer.batch_i,
-		}, args.model_path)
+		}, args.save_path)
 
 
 if __name__ == '__main__':
@@ -101,17 +102,30 @@ if __name__ == '__main__':
 	parser.add_argument('--train')
 	parser.add_argument('--test')
 	parser.add_argument('-l', '--log_path', '--l')
-	parser.add_argument('-m', '--model_path', '--m')
+	parser.add_argument('-m', '--load_path', '--m')
+	parser.add_argument('-s', '--save_path', '--s')
 	parser.add_argument('-a', '--arch')
 	parser.add_argument('--print_every', type=int, default=100)
 	parser.add_argument('--test_every', type=int, default=100)
+	parser.add_argument('--print_every', type=int, default=100)
+	parser.add_argument('--train_bs', type=int, default=64)
+	parser.add_argument('--test_bs', type=int, default=64)
 	parser.add_argument('-n', '--n_saes', type=int)
 	parser.add_argument('--ep', type=int, help='Max epochs to train')
 	args = parser.parse_args()
+	assert args.save_path is not None
 
 	util.init_logger(args.log_path)
 	logger.info(args)
 
+	# Make train dataloader
+	if args.train is not None:
+		trainset = dataset.XDataset( args.train )
+		trainloader = DataLoader( trainset, batch_size=args.train_bs, shuffle=True )
+	# Make test dataloader
+	if args.test is not None:
+		testset = dataset.XDataset( args.test )
+		testloader = DataLoader( testset, batch_size=args.test_bs )
 	# Build model
 	master_net = network.Net(arch=args.arch)
 	if os.path.exists(args.model_path):
