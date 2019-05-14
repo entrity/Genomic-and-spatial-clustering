@@ -7,6 +7,8 @@ tmp
 tmp.*
 metaprogramming/batch*.sh
 metaprogramming/*.txt
+models
+nn-log
 logs
 log
 log.txt

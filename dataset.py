@@ -6,7 +6,7 @@ import torch.utils.data as data
 class XDataset(data.Dataset):
     def __init__(self, path):
         self.path = path
-        self.data = np.load(path)
+        self.data = torch.from_numpy(np.load(path)).float()
 
     def __getitem__(self, index):
         return self.data[index,...]

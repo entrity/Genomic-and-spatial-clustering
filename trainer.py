@@ -7,35 +7,37 @@ import network, dataset
 from collections import deque
 
 class Trainer(object):
-	def __init__(self, trainloader, testloader, net, **kwargs):
-		self.trainloader = train
-		self.testloader = test
+	def __init__(self, trainloader, testloader, net, optim, **kwargs):
+		self.trainloader = trainloader
+		self.testloader = testloader
 		self.net = net
+		self.optim = optim
 		self.loss_fn = nn.MSELoss()
 		self.test_every = kwargs.get('test_every', 100)
 		self.print_every = kwargs.get('print_every', 100)
 		self.save_model_fn = kwargs.get('save_model', save_model)
 		self._tics = []
 
-	def run(self, n_epochs):
+	def run(self, n_epochs, epoch_i=0):
 		self.net.train()
 		self.iter_i       = 0
 		self.best_test    = 2*10
 		self.test_losses  = []
 		self.train_losses = []
 		self.batch_losses = deque(maxlen=1000)
-		for self.epoch_i in range(n_epochs):
+		for self.epoch_i in range(epoch_i, n_epochs):
 			self.train_epoch()
 		
 	def train_epoch(self):
 		self.tic()
-		for self.batch_i, batch in enumerator:
+		for self.batch_i, batch in enumerate(self.trainloader):
 			self.train_batch(batch)
-			if self.iter_i % self.test_every:
+			if self.test_every and self.iter_i % self.test_every:
 				self.test()
 			self.iter_i += 1
 		self.toc()
 		self.log_epoch_loss()
+		self.test()
 		self.epoch_i += 1
 
 	def train_batch(self, batch):
@@ -46,14 +48,13 @@ class Trainer(object):
 		optim.step()
 		self.batch_losses.append(loss.item())
 		tictoc = self.toc()
-		if self.iter_i % self.print_every:
+		if self.print_every and self.iter_i % self.print_every:
 			self.print('TRAIN', loss.item(), tictoc)
 
 	def _loss(self, batch):
-		X = batch['X']
-		y = batch['y']
-		hyp = self.net(X)
-		return self.loss_fn(hyp, y)
+		X = batch
+		y = self.net(X)
+		return self.loss_fn(y, X)
 
 	def _loss_for_dataloader(self, dataloader, mode):
 		self.tic()
@@ -89,8 +90,8 @@ class Trainer(object):
 
 def save_model():
 	torch.save({
-		'state_dict': master_net.state_dict,
-		'optim_dict': trainer.optim.state_dict,
+		'state_dict': master_net.state_dict(),
+		'optim_dict': trainer.optim.state_dict(),
 		'best_test': trainer.best_test,
 		'iter_i': trainer.iter_i,
 		'epoch_i': trainer.epoch_i,
@@ -111,11 +112,17 @@ if __name__ == '__main__':
 	parser.add_argument('--train_bs', type=int, default=64)
 	parser.add_argument('--test_bs', type=int, default=64)
 	parser.add_argument('-n', '--n_saes', type=int)
-	parser.add_argument('--ep', type=int, help='Max epochs to train')
+	parser.add_argument('--ep', default=1000, type=int, help='Max epochs to train')
 	parser.add_argument('--lr', type=float)
 	args = parser.parse_args()
 	assert args.save_path is not None
 
+	# Make dirs
+	os.makedirs(os.path.dirname( args.load_path ), exist_ok=True)
+	os.makedirs(os.path.dirname( args.save_path ), exist_ok=True)
+	os.makedirs(os.path.dirname( args.log_path ), exist_ok=True)
+
+	# Start logging
 	util.init_logger(args.log_path)
 	info(args)
 
@@ -131,14 +138,18 @@ if __name__ == '__main__':
 	master_net = network.Net(arch=[int(x) for x in args.arch.split()])
 	if os.path.exists(args.load_path):
 		dump = torch.load(args.load_path)
+		epoch_i = dump['epoch_i']
 		master_net.load_state_dict( dump['state_dict'] )
+		info('Loaded from %s' % args.load_path)
+	else:
+		epoch_i = 0
 	net = master_net.subnet(args.n_saes)
-	# Build optimizer
-	optim   = torch.optim.SGD( net, lr=args.lr )
+	# Build  izer
+	optim   = torch.optim.SGD( net.parameters(), lr=args.lr )
 	if os.path.exists(args.load_path):
-		optim.load_state_dict( dump['optim_state_dict'] )
+		optim.load_state_dict( dump['optim_dict'] )
 	# Build trainer
-	trainer = Trainer(trainloader, testloader, net,
+	trainer = Trainer(trainloader, testloader, net, optim,
 		test_every=args.test_every, print_every=args.print_every)
 	# Train
-	trainer.run(args.ep)
+	trainer.run(args.ep, epoch_i)
