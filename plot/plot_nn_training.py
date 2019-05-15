@@ -9,7 +9,7 @@ ep_data = np.fromregex(FIN, 'EPOCH\s+(\d+):(\d+)\s+(\S+)\s+.*', [
 test_data = np.fromregex(FIN, 'TEST\s+(\d+):(\d+)\s+(\S+)\s+.*', [
 	('ep', np.int32), ('iter', np.int64), ('loss', np.double)])
 
-S = np.where( ep_data['ep'] == 0 )[-1].item()
+S = np.where( ep_data['ep'] == 0 )[0][-1].item()
 
 fig = plt.figure()
 plt.plot(ep_data['ep'][S:], ep_data['loss'][S:], c='m')

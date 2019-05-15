@@ -3,8 +3,12 @@
 echo $(( 50 * ( 32 + 1 ) ))
 
 LR=(NONE 1e-2 5e-3 2.5e-3)
+EP=(NONE 250 10000)
 
-for STAGE in 1 2 3; do
+function run ()
+{
+	STAGE="$1"
+	OTHER_ARGS="${@:2}"
 	PREV_STAGE=$(( ${STAGE} - 1 ))
 	python trainer.py \
 		--train artefacts/knn-feats-pca_50-knn_16-train.npy \
@@ -16,6 +20,10 @@ for STAGE in 1 2 3; do
 		--test_every 0 \
 		--arch '850 250 50' \
 		--lr ${LR[ $STAGE ]} \
-		--ep 10000 \
-		-n ${STAGE}
-done
+		--ep ${EP[ $STAGE ]} \
+		-n ${STAGE} \
+		${OTHER_ARGS[@]}
+}
+
+run 1
+run 2
