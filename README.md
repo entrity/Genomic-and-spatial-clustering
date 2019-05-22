@@ -31,3 +31,11 @@ I plan to apply spectral clustering directly to the graph data (omitting the afo
 2. Sparse graph
 3. Spectral clustering
 4. Qualitative inspection
+
+## How to
+
+### GCN
+
+Train the GCN with `train.sh`. Set your learning rate(s) and epoch counts in `LR` and `EP`.
+
+After training, save the embeddings for all the data points with `infer-embeddings.sh`.

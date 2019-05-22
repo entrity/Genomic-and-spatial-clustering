@@ -44,17 +44,28 @@ class Net(nn.Module):
 		if index not in [n-1, n//2-1]:
 			seq.add_module('relu', nn.ReLU())
 		return seq
+	# Return an instance of nn.Sequential, containing n SEA's
 	def subnet(self, n_saes):
 		n = len(self.dims)
-		print('Requested %d' % n_saes)
+		info('Requested %d' % n_saes)
 		if n_saes > n // 2:
 			raise Exception('Requested %d SAEs, but only %d are present' % (n_saes, len(self.arch)))
 		seq = nn.Sequential()
+		# Create encoder blocks
 		for i in range(n_saes):
 			seq.add_module(str(i), self._build_block(i))
+		# Create decoder blocks
 		for i in range(n-n_saes, n):
 			seq.add_module(str(i), self._build_block(i))
 		return seq
+	# Return layers only up to the bottleneck, enclose in nn.Sequential
+	def get_encoder(self):
+		seq = nn.Sequential()
+		# Create encoder blocks
+		for i in range(len(self.dims) // 2):
+			seq.add_module(str(i), self._build_block(i))
+		return seq
+
 
 if __name__ == '__main__':
 	x = Net('tmp.pth', arch=[16, 8, 4])
