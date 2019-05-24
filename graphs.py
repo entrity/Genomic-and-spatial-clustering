@@ -117,7 +117,5 @@ def run(GraphClass, xy_npy, gen_npy, k_nn, savedir, no_spatial=False):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
-	parser.add_argument('--no-spatial', action='store_true', help='Do not include spatial information in computing distance')
-	parser.add_argument('-k', '--knn', type=int, help='Number of nearest neighbours to preserve in sparse graph')
 	args = parser.parse_args()
 	xy, gen, g = run(BaseGraph, args.xy_npy, args.gen_npy, args.knn, args.savedir, args.no_spatial)

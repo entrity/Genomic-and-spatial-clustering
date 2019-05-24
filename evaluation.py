@@ -105,8 +105,8 @@ if __name__ == '__main__':
 	util.add_default_args(parser)
 	parser.add_argument('-c', '--clusters', help='Pickle file of kmeans object', default='intermediates/no-spatial-knn-4/kmeans-dim-None-k-12')
 	args = parser.parse_args()
-	graph = np.load(args.graph)
-	pos_mask, neg_mask = get_ground_truth(graph, args)
+	graph = np.load(args.sparse)
+	pos_mask, neg_mask = get_ground_truth(graph, args.id_csv, args.lbl_csv)
 	with open(args.clusters, 'rb') as fin:
 		kmeans = pickle.load(fin)
 	bin_graph = graph_from_clusters(kmeans.labels_)
