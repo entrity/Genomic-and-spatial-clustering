@@ -31,7 +31,7 @@ def _graphs(xy, gens):
 		g.sparsify(args.knn, args.sparse)
 		sparse_graph = g.A
 	# Save KNN
-	if not os.path.exists(args.knn_feats) or not os.path.exists(args.knn_idxs):
+	if args.knn_feats is not None and (not os.path.exists(args.knn_feats) or not os.path.exists(args.knn_idxs)):
 		fc   = np.load(args.fc)
 		N, M = gens.shape
 		# Get indices of nearest neighbours
@@ -47,7 +47,7 @@ def _graphs(xy, gens):
 
 # args : kmobj, lapmode, sparse, dim, embedding, km
 def _cluster():
-	if os.path.exists(args.kmobj) and os.path.exists(args.embedding):
+	if args.kmobj and os.path.exists(args.kmobj) and os.path.exists(args.embedding):
 		with open(args.kmobj, 'rb') as fin:
 			kmobj = pickle.load(fin)
 		embedding = np.load(args.embedding)
@@ -59,8 +59,9 @@ def _cluster():
 		else:
 			raise Exception('Illegal value for laplacian mode')
 		kmobj = clustering.cluster(args.km)
-		with open(args.kmobj, 'wb') as fout:
-			pickle.dump(kmobj, fout)
+		if args.kmobj:
+			with open(args.kmobj, 'wb') as fout:
+				pickle.dump(kmobj, fout)
 		np.save(args.embedding, clustering.embedding)
 		embedding = clustering.embedding
 	if args.cluster_membership_dir is not None:
@@ -85,12 +86,17 @@ def _evaluation(sparse_graph, kmobj, embeddings):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
+	parser.add_argument('--no-pre', action='store_true', help='Don\'t preprocess data. Skip to the graphs step.')
 	args = parser.parse_args()
 	print(args)
 	print('>>>\tPCA\tDIM\tKM\tKNN\tLAP')
 	print('>>>\t%d\t%d\t%d\t%d\t%s' % (args.pca, args.dim, args.km, args.knn, args.lapmode))
 	# Preprocess: transcriptomes, xy
-	xy, gens = _preprocess()
+	if args.no_pre:
+		xy = np.load(args.xy_npy)
+		gens = np.load(args.gen_npy)
+	else:
+		xy, gens = _preprocess()
 	# Graphs: fc-graph, sparse-graph
 	sparse_graph = _graphs(xy, gens)
 	# Cluster: embedding, kmeans

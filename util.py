@@ -23,7 +23,7 @@ def add_default_args(parser):
 	intm.add_argument('-g', '--sparse', help='sparse adjacency matrix (npy file)')
 	parser.add_argument('--knn', type=int, help='Order of k-nearest neighbours graph')
 	parser.add_argument('--km', type=int, help='Number of clusters')
-	parser.add_argument('--pca', type=int, help='Number of dimensions to use for PCA from raw inputs')
+	parser.add_argument('--pca', type=int, default=0, help='Number of dimensions to use for PCA from raw inputs')
 	parser.add_argument('--dim', type=int, help='Number of eigenvectors to use for embedding')
 	parser.add_argument('--kmobj', help='Path to pickle of kmeans object')
 	parser.add_argument('--embedding', help='Path to embedding as npy file')
