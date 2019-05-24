@@ -34,8 +34,54 @@ I plan to apply spectral clustering directly to the graph data (omitting the afo
 
 ## How to
 
+### Shared variables
+
+
+### Whiten data
+
+*See `preprocess.py`*
+
+### Fully-connected graph
+
+Run `run.sh`.
+
+### Sparsify graph
+
+Same as "Fully-connected graph": run `run.sh`
+
 ### GCN
 
 Train the GCN with `train.sh`. Set your learning rate(s) and epoch counts in `LR` and `EP`.
 
-After training, save the embeddings for all the data points with `infer-embeddings.sh`.
+This will save your log to `--log_path`.
+This will save your model to `--save_path`.
+
+After training, create the embeddings for all the data points with `infer-embeddings.sh`.
+
+This will save your embeddings to `--save_path`.
+
+### Spectral clustering & Evaluation
+
+Run `python cluster.py`.
+
+```
+LBL_CSV=data/class_labels.csv
+ID_CSV=data/output_keptCellID.txt
+KNN=16
+KM=12
+DIM=4
+XY_NP=data/xy.npy
+FEAT_NP=artefacts/nn-embeddings.npy
+SAVEDIR=after-gcn
+GRAPH=$SAVEDIR/sparse-graph.npy
+
+python run.py \
+  --no-spatial \
+  --knn $KNN --km $KM --dim $DIM --lapmode rw \
+  --embedding "$SAVEDIR/laplacian-embedding-rw.npy" \
+  --id-csv "$ID_CSV" --lbl-csv "$LBL_CSV" \
+  --sparse "$GRAPH" \
+  --gen-np "$FEAT_NP" \
+  --xy-np "$XY_NP" \
+  --no-pre
+```
