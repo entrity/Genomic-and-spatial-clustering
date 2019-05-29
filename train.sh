@@ -5,7 +5,11 @@
 echo $(( 50 * ( 32 + 1 ) ))
 
 LR=(NONE 2e-2 2e-2 2e-3)
-EP=(NONE 2500 2500 5000)
+EP=(NONE 50 150 500)
+
+# These files should be something like artefacts/knn-feats-pca_50-knn_32-train.npy
+TRAINSET_FILE="${1}"
+TESTSET_FILE="${2}"
 
 function run ()
 {
@@ -13,8 +17,8 @@ function run ()
 	OTHER_ARGS="${@:2}"
 	PREV_STAGE=$(( ${STAGE} - 1 ))
 	python trainer.py \
-		--train artefacts/knn-feats-pca_50-knn_32-train.npy \
-		--test artefacts/knn-feats-pca_50-knn_32-test.npy \
+		--train "$TRAINSET_FILE" \
+		--test "$TESTSET_FILE" \
 		--log_path  nn-log/stage-${STAGE}.log \
 		--load_path models/stage-${PREV_STAGE}.pth \
 		--save_path models/stage-${STAGE}.pth \
@@ -30,3 +34,4 @@ function run ()
 run 1
 run 2
 run 3
+

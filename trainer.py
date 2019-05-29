@@ -34,12 +34,12 @@ class Trainer(object):
 		self.tic()
 		for self.batch_i, batch in enumerate(self.trainloader):
 			self.train_batch(batch)
-			if self.test_every and self.iter_i % self.test_every:
+			if self.test_every and self.iter_i % self.test_every and self.testloader is not None:
 				self.test()
 			self.iter_i += 1
 		self.toc()
 		self.log_epoch_loss()
-		self.test()
+		if self.testloader is not None: self.test()
 		self.epoch_i += 1
 
 	def train_batch(self, batch):
@@ -140,13 +140,17 @@ if __name__ == '__main__':
 	info(args)
 
 	# Make train dataloader
-	if args.train is not None:
+	if args.train is not None and len(args.train):
 		trainset = dataset.XDataset( args.train )
 		trainloader = DataLoader( trainset, batch_size=args.train_bs, shuffle=True )
+	else:
+		trainloader = None
 	# Make test dataloader
-	if args.test is not None:
+	if args.test is not None and len(args.test):
 		testset = dataset.XDataset( args.test )
 		testloader = DataLoader( testset, batch_size=args.test_bs )
+	else:
+		testloader = None
 	# Build model
 	master_net = network.Net(arch=[int(x) for x in args.arch.split()])
 	if DO_LOAD:

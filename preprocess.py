@@ -35,7 +35,6 @@ def preprocess_transcriptome(ndarray, pca, savepath):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	util.add_default_args(parser)
-	parser.add_argument('--pca', type=int, default=50, help='Number of dimensions to use for PCA')
 	args = parser.parse_args()
 	xy   = load_xy_csv(args.xy_csv)
 	np.save(args.xy_npy, xy)
