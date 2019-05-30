@@ -107,7 +107,14 @@ def save_model():
 		'batch_i': trainer.batch_i,
 		}, args.save_path)
 
-
+def get_datasets(trainpath, testpath):
+	trainset = dataset.XDataset( trainpath )
+	if testpath is not None and len(testpath):
+		testset = dataset.XDataset( testpath )
+	else:
+		trainset, testset = trainset.split(0.1)
+	return trainset, testset
+	
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--train')
@@ -139,18 +146,11 @@ if __name__ == '__main__':
 	util.init_logger(args.log_path)
 	info(args)
 
-	# Make train dataloader
-	if args.train is not None and len(args.train):
-		trainset = dataset.XDataset( args.train )
-		trainloader = DataLoader( trainset, batch_size=args.train_bs, shuffle=True )
-	else:
-		trainloader = None
-	# Make test dataloader
-	if args.test is not None and len(args.test):
-		testset = dataset.XDataset( args.test )
-		testloader = DataLoader( testset, batch_size=args.test_bs )
-	else:
-		testloader = None
+	# Make dataloaders
+	trainset, testset = get_datasets(args.train, args.test)
+	trainloader = DataLoader( trainset, batch_size=args.train_bs, shuffle=True )
+	testloader = DataLoader( testset, batch_size=args.test_bs )	
+
 	# Build model
 	master_net = network.Net(arch=[int(x) for x in args.arch.split()])
 	if DO_LOAD:
